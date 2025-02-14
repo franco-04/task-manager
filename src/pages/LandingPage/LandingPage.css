@@ -1,0 +1,50 @@
+.landing-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f0f2f5; 
+}
+
+.landing-card {
+  width: 400px; 
+  text-align: center;
+  padding: 30px;
+  border-radius: 10px; 
+  background: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+}
+
+.landing-card h2 {
+  font-size: 2rem;
+  color: #333; 
+  margin-bottom: 20px;
+}
+
+.landing-card p {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.landing-card .ant-btn {
+  margin: 0 10px;
+  border: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.landing-card .ant-btn-primary {
+  background: #1890ff; 
+  color: white;
+}
+
+.landing-card .ant-btn-default {
+  background: transparent;
+  color: #1890ff; 
+  border: 1px solid #1890ff;
+}
+
+.landing-card .ant-btn:hover {
+  opacity: 0.8; 
+}
