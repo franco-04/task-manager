@@ -1,0 +1,17 @@
+.dashboard-container {
+    padding: 20px;
+  }
+  
+  .tasks-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 15px;
+  }
+  
+  /* Ajustes responsivos */
+  @media (max-width: 768px) {
+    .tasks-grid {
+      justify-content: center;
+    }
+  }
