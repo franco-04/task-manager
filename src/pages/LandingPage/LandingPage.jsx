@@ -14,7 +14,7 @@ const LandingPage = () => {
         <Paragraph>Organiza tus tareas</Paragraph>
         <Space>
           <Button type="primary" onClick={() => navigate('/login')}>
-            Iniciar Sesión
+            Registrate
           </Button>
         </Space>
       </Card>
