@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Form, Input, message } from 'antd';
-
-
+import validator from 'validator'; 
+import './RegisPage.css';
 
 const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const onFinish = async (values) => {
-
+    if (!validator.isEmail(values.email)) {
+      message.error('Por favor, ingresa un email válido.');
+      return;
+    }
 
     if (values.username.trim() === '' || values.password.trim() === '') {
       message.error('No se permiten espacios vacíos.');
@@ -19,7 +22,7 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/iniciarsesion', {
+      const response = await fetch('http://localhost:3001/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,11 +37,10 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (response.ok) {
-        message.success('inicio exitoso!');
-        localStorage.setItem('userId', data.userId);
-        navigate('/dashboard'); 
+        message.success('Registro exitoso!');
+        navigate('/login'); 
       } else {
-        message.error(data.error || 'Error al iniciar sesion');
+        message.error(data.error || 'Error al registrar el usuario');
       }
     } catch (error) {
       console.error('Error al enviar los datos:', error);
@@ -56,7 +58,7 @@ const LoginPage = () => {
         initialValues={{ remember: true }}
         onFinish={onFinish}
       >
-        <h2>Iniciar sesion</h2>
+        <h2>Registrarse</h2>
 
         <Form.Item
           name="username"
@@ -68,6 +70,22 @@ const LoginPage = () => {
           <Input placeholder="Nombre de usuario" />
         </Form.Item>
 
+        <Form.Item
+  name="email"
+  rules={[
+    { required: true, message: 'Ingresa tu email!' },
+    {
+      validator: (_, value) => {
+        if (!value || typeof value !== 'string' || !validator.isEmail(value)) {
+          return Promise.reject(new Error('Ingresa un email válido!'));
+        }
+        return Promise.resolve();
+      },
+    },
+  ]}
+>
+  <Input placeholder="Email" />
+</Form.Item>
         <Form.Item
           name="password"
           rules={[
@@ -83,8 +101,9 @@ const LoginPage = () => {
             type="primary" 
             htmlType="submit" 
             loading={loading}
-            block>
-            Iniciar sesión
+            block
+          >
+            Registrarme
           </Button>
         </Form.Item>
       </Form>

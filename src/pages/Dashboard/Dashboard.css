@@ -15,3 +15,24 @@
       justify-content: center;
     }
   }
+  .kanban-board {
+    margin-top: 20px;
+  }
+  
+  .status-column {
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+  
+  .task-list {
+    min-height: 100px;
+  }
+  
+  .task-card {
+    margin-bottom: 8px;
+    cursor: move;
+  }
+  
+  .task-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }

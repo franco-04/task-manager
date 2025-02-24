@@ -1,14 +1,18 @@
-import { useState } from 'react';
-import { FloatButton, Modal, Form, Input, Select, DatePicker, Card, Tag, Typography } from 'antd';
+import { useState, useEffect } from 'react';
+import { FloatButton, Modal, Form, Input, Select, DatePicker, Card, Tag, Typography, Row, Col } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import './Dashboard.css'; 
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import './Dashboard.css';
 
 const { Title } = Typography;
+
+const statusOptions = ['In Progress', 'Done', 'Paused', 'Revision'];
 
 const DashboardPage = () => {
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [tasks, setTasks] = useState([]);
+  const [userId] = useState(localStorage.getItem('userId'));
 
   const statusColors = {
     'In Progress': 'blue',
@@ -19,18 +23,70 @@ const DashboardPage = () => {
 
   const categories = ['Trabajo', 'Personal', 'Estudio', 'Otros'];
 
+  // Agrupar tareas por estado
+  const groupTasksByStatus = () => {
+    const grouped = {};
+    statusOptions.forEach(status => {
+      grouped[status] = tasks.filter(task => task.Status === status);
+    });
+    return grouped;
+  };
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await fetch(`http://localhost:3001/getTasks/${userId}`);
+        if (!response.ok) throw new Error('Error al cargar tareas');
+        
+        const data = await response.json();
+        setTasks(data);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    if (userId) fetchTasks();
+  }, [userId]);
+
+  const handleDragEnd = async (result) => {
+    if (!result.destination) return;
+
+    const taskId = result.draggableId;
+    const newStatus = result.destination.droppableId;
+    
+    try {
+      await fetch(`http://localhost:3001/updateTaskStatus/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      const updatedTasks = tasks.map(task => {
+        if (task.id === taskId) {
+          return { ...task, Status: newStatus };
+        }
+        return task;
+      });
+      
+      setTasks(updatedTasks);
+    } catch (error) {
+      console.error('Error al actualizar tarea:', error);
+    }
+  };
+
   const handleFormSubmit = async (values) => {
-    // Crear objeto con los datos de la tarea
     const newTask = {
       name: values.taskName,
       description: values.description,
       dueDate: values.dueDate.format('YYYY-MM-DD HH:mm'),
       status: values.status,
-      category: values.category
+      category: values.category,
+      userId: userId
     };
-  
+
     try {
-      // Enviar petición POST al backend
       const response = await fetch('http://localhost:3001/createTask', {
         method: 'POST',
         headers: {
@@ -38,43 +94,79 @@ const DashboardPage = () => {
         },
         body: JSON.stringify(newTask)
       });
-  
-      if (!response.ok) {
-        throw new Error('Error al insertar la tarea en el backend');
-      }
-  
+
+      if (!response.ok) throw new Error('Error al crear tarea');
+      
       const data = await response.json();
-      console.log('Tarea insertada:', data);
-  
-      // Actualizar el estado local para reflejar la nueva tarea
-      setTasks([...tasks, newTask]);
+      const updatedResponse = await fetch(`http://localhost:3001/getTasks/${userId}`);
+      const updatedData = await updatedResponse.json();
+      setTasks(updatedData);
+
       setIsModalVisible(false);
       form.resetFields();
     } catch (error) {
       console.error('Error:', error);
     }
   };
-  
 
   return (
     <div className="dashboard-container">
-      <Title level={3}>Panel Principal</Title>
-      <p>Bienvenido al sistema de gestión de tareas</p>
-
-      <div className="tasks-grid">
-        {tasks.map((task, index) => (
-          <Card 
-            key={index} 
-            title={task.name} 
-            style={{ width: 300, margin: '10px' }}
-            extra={<Tag color={statusColors[task.status]}>{task.status}</Tag>}
-          >
-            <p><strong>Categoría:</strong> {task.category}</p>
-            <p><strong>Fecha límite:</strong> {task.dueDate}</p>
-            <p>{task.description}</p>
-          </Card>
-        ))}
-      </div>
+      <Title level={3}>Panel de Tareas Kanban</Title>
+      
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Row gutter={16} className="kanban-board">
+          {Object.entries(groupTasksByStatus()).map(([status, tasks]) => (
+            <Col span={6} key={status}>
+              <Card
+                title={
+                  <Tag color={statusColors[status]} style={{ fontSize: '1.1em' }}>
+                    {status} ({tasks.length})
+                  </Tag>
+                }
+                className="status-column"
+              >
+                <Droppable droppableId={status}>
+                  {(provided) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className="task-list"
+                    >
+                      {tasks.map((task, index) => (
+                        <Draggable
+                          key={task.id}
+                          draggableId={task.id}
+                          index={index}
+                        >
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="task-card"
+                            >
+                              <Card
+                                title={task["Name Task"]}
+                                size="small"
+                                style={{ marginBottom: 8 }}
+                              >
+                                <p><strong>Categoría:</strong> {task.Category}</p>
+                                <p><strong>Fecha límite:</strong> {new Date(task.Dead_line).toLocaleDateString()}</p>
+                                <p>{task.Description}</p>
+                              </Card>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      </DragDropContext>
 
       <FloatButton
         icon={<PlusOutlined />}
